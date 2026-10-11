@@ -1,37 +1,32 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useLocationStore } from '@/stores/location'
-import waveIcon from '@/assets/images/place-modal/wave.svg'
-import recordingIcon from '@/assets/images/place-modal/recording.svg'
-import volumeIcon from '@/assets/images/place-modal/volume.svg'
+import LocationDialog from '@/components/ui/LocationDialog.vue'
 
 const location = useLocationStore()
+const locationOpen = ref(false)
 
-const components = computed(() => location.place?.address_components ?? [])
+const label = computed(() => location.areaLabel)
 
-const label = computed(() => {
-  const first = components.value[2]?.short_name
-  const second = components.value[3]?.short_name
-  return [first, second].filter(Boolean).join(', ')
-})
-
-const missed = computed(() => !location.isResolving && !!location.error)
-const settled = computed(() => !location.isResolving && !location.error && !!label.value)
+const missed = computed(() => !location.isResolving && !location.coords)
+const settled = computed(() => !location.isResolving && !!location.coords && !!label.value)
 </script>
 
 <template>
   <header class="topBar">
-    <div class="topBar__sound" aria-hidden="true">
-     
-    </div>
+    <div class="topBar__sound" aria-hidden="true"></div>
     <div class="topBar__title-container">Insidee</div>
     <div class="topBar__container">
-      <div
+      <button
+        type="button"
         class="topBar__container--location-button"
         :class="{
           'is-found': settled,
           'is-missed': missed,
         }"
+        aria-haspopup="dialog"
+        :aria-expanded="locationOpen"
+        @click="locationOpen = true"
       >
         <Transition name="loc" mode="out-in">
           <span v-if="location.isResolving" key="loading" class="loc">
@@ -57,8 +52,9 @@ const settled = computed(() => !location.isResolving && !location.error && !!lab
             stroke-linejoin="round"
           />
         </svg>
-      </div>
+      </button>
     </div>
+    <LocationDialog v-model="locationOpen" />
   </header>
 </template>
 
@@ -86,7 +82,11 @@ const settled = computed(() => !location.isResolving && !location.error && !!lab
       align-items: center;
       width: max-content;
       height: max-content;
+      border: 0;
       background-color: #f0f0f0;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
 
       border-radius: 0.5rem;
       padding: 0.625rem;
@@ -127,7 +127,7 @@ const settled = computed(() => !location.isResolving && !location.error && !!lab
   .topBar {
     &__title-container {
       top: 10px;
-      left: 50%;
+      left: 15%;
       transform: translateX(-50%);
       font-size: 36px !important;
     }

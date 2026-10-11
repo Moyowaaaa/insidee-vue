@@ -209,7 +209,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import type { spot } from '@/features/types'
-import type { LatLng } from '@/types'
+import type { LatLng, ListedPlace } from '@/types'
 import useModalStore from '@/stores/modal'
 import { usePlacesStore } from '@/stores/places'
 import { useLocationStore } from '@/stores/location'
@@ -297,7 +297,14 @@ const formatClock = (hour: number, minute: number) => {
   return `${h}${m}${hour >= 12 ? 'pm' : 'am'}`
 }
 
-const hoursFrom = (place: { regularOpeningHours?: google.maps.places.OpeningHours | null }) => {
+const hoursFrom = (place: {
+  regularOpeningHours?: {
+    periods?: Array<{
+      open: { day: number; hour: number; minute: number }
+      close?: { day: number; hour: number; minute: number } | null
+    }>
+  } | null
+}) => {
   const periods = place.regularOpeningHours?.periods
   if (!periods?.length) return 'Hours unavailable'
   const today = new Date().getDay()
@@ -312,28 +319,30 @@ const placeName = computed(() => {
   return detailsById.value[place.id]?.name || place.displayName || ''
 })
 
-const loadDetails = async (place: google.maps.places.Place) => {
+const keepDetails = (id: string, details: { name: string; hours: string }) => {
+  detailsById.value = { ...detailsById.value, [id]: details }
+  places.rememberDetails(id, details)
+}
+
+const loadDetails = async (place: ListedPlace) => {
   const id = place.id
   if (!id || detailsById.value[id]) return
 
-  if (place.displayName && place.regularOpeningHours?.periods?.length) {
-    detailsById.value = {
-      ...detailsById.value,
-      [id]: { name: place.displayName, hours: hoursFrom(place) },
-    }
+  if (place.displayName && (place.hoursLabel || place.regularOpeningHours?.periods?.length)) {
+    keepDetails(id, {
+      name: place.displayName,
+      hours: place.hoursLabel || hoursFrom(place),
+    })
     return
   }
 
   const { Place } = (await google.maps.importLibrary('places')) as google.maps.PlacesLibrary
   const fresh = new Place({ id })
   await fresh.fetchFields({ fields: ['displayName', 'regularOpeningHours'] })
-  detailsById.value = {
-    ...detailsById.value,
-    [id]: {
-      name: fresh.displayName ?? '',
-      hours: hoursFrom(fresh),
-    },
-  }
+  keepDetails(id, {
+    name: fresh.displayName ?? '',
+    hours: hoursFrom(fresh),
+  })
 }
 
 watch(
@@ -1086,7 +1095,7 @@ const sharePlace = () => {
       height: 100%;
       min-height: 0;
       border-radius: 0;
-      padding: 37px 19px 32px;
+      padding: 37px 10px 32px;
       overflow-y: auto;
     }
 
@@ -1126,8 +1135,9 @@ const sharePlace = () => {
   }
 
   .stack {
-    width: min(307px, 100%);
-    height: calc(min(307px, 100%) * 469 / 307);
+    width: 100%;
+    height: auto;
+    aspect-ratio: 307 / 469;
     flex-basis: auto;
 
     &__photo {
@@ -1165,8 +1175,9 @@ const sharePlace = () => {
   }
 
   .side {
-    width: min(307px, 100%);
-    height: calc(min(307px, 100%) * 469 / 307);
+    width: 100%;
+    height: auto;
+    aspect-ratio: 307 / 469;
     flex-basis: auto;
     order: 3;
     background: transparent;
@@ -1221,7 +1232,7 @@ const sharePlace = () => {
 
   .reviews {
     order: 2;
-    width: min(307px, 100%);
+    width: 100%;
     flex-basis: auto;
     max-height: none;
     overflow: visible;

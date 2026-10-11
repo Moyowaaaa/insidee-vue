@@ -3,6 +3,7 @@ import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
 import { Toaster, toast } from 'vue-sonner'
 import TheTopBar from '@/components/layout/TheTopBar.vue'
+import LocationNote from '@/components/ui/LocationNote.vue'
 import { ToastNo, ToastOk } from '@/components/ui/toastIcons'
 import { useLenis } from '@/composables/useLenis'
 import { useLocationStore } from '@/stores/location'
@@ -19,20 +20,23 @@ const locationCopy = (message: string) => {
 }
 
 onMounted(async () => {
+  if (location.coords) return
+
   await location.detect()
   if (location.error) {
     toast.error('Location off', { description: locationCopy(location.error) })
     return
   }
 
-  const parts = location.place?.address_components ?? []
-  const where = [parts[2]?.short_name, parts[3]?.short_name].filter(Boolean).join(', ')
-  toast.success(where || 'Location found', { description: 'Showing places of interests around you.' })
+  toast.success(location.areaLabel || 'Location found', {
+    description: 'Showing places of interests around you.',
+  })
 })
 </script>
 
 <template>
   <TheTopBar />
+  <LocationNote />
   <RouterView />
   <Toaster
     position="top-center"

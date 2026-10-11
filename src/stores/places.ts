@@ -2,7 +2,14 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useGoogleMaps } from '@/composables/useGoogleMaps'
 import { useLocationStore } from '@/stores/location'
-import type { Place, Spot } from '@/types'
+import {
+  hydratePlace,
+  patchPlaceCache,
+  readPlaceCache,
+  snapshotPlace,
+  writePlaceCache,
+} from '@/stores/placeSnapshots'
+import type { ListedPlace, Spot } from '@/types'
 
 
 const MAX_RESULTS = 12
@@ -24,7 +31,7 @@ const FIELDS = [
   'photos',
 ]
 
-const distanceKm = (from: { lat: number; lng: number }, place: Place) => {
+const distanceKm = (from: { lat: number; lng: number }, place: google.maps.places.Place) => {
   const to = place.location
   if (!to) return Number.POSITIVE_INFINITY
   const toRad = (deg: number) => (deg * Math.PI) / 180
@@ -37,14 +44,14 @@ const distanceKm = (from: { lat: number; lng: number }, place: Place) => {
 }
 
 export const usePlacesStore = defineStore('places', () => {
-  const results = ref<Place[]>([])
+  const results = ref<ListedPlace[]>([])
   const isFetching = ref(false)
   const error = ref<string | null>(null)
   const activeIndex = ref(0)
   const activePhotoIndex = ref(0)
 
-  const cache = new Map<string, Place[]>()
-  const inflight = new Map<string, Promise<Place[]>>()
+  const cache = new Map<string, ListedPlace[]>()
+  const inflight = new Map<string, Promise<ListedPlace[]>>()
   const { load } = useGoogleMaps()
   const location = useLocationStore()
 
@@ -56,21 +63,25 @@ export const usePlacesStore = defineStore('places', () => {
     return `${spot.name}:${b(c.lat)},${b(c.lng)}:near`
   }
 
-  const apply = (list: Place[]) => {
+  const apply = (list: ListedPlace[]) => {
     results.value = list
     activeIndex.value = 0
     activePhotoIndex.value = 0
     error.value = null
   }
 
-  const qualityScore = (place: Place) => {
+  const qualityScore = (place: google.maps.places.Place) => {
     const rating = place.rating ?? 0
     const count = place.userRatingCount ?? 0
     return (rating * count + PRIOR_RATING * PRIOR_REVIEWS) / (count + PRIOR_REVIEWS)
   }
 
-  const rankPlaces = (places: Place[], center: { lat: number; lng: number }, maxKm: number) => {
-    const unique = new Map<string, Place>()
+  const rankPlaces = (
+    places: google.maps.places.Place[],
+    center: { lat: number; lng: number },
+    maxKm: number,
+  ) => {
+    const unique = new Map<string, google.maps.places.Place>()
     for (const place of places) {
       if (place.id && !unique.has(place.id)) unique.set(place.id, place)
     }
@@ -78,12 +89,13 @@ export const usePlacesStore = defineStore('places', () => {
     const nearby = [...unique.values()].filter((place) => distanceKm(center, place) <= maxKm)
     const rated = nearby.filter((place) => (place.rating ?? 0) >= MIN_RATING)
     const pool = rated.length >= 5 ? rated : nearby
-    const score = (place: Place) => qualityScore(place) - distanceKm(center, place) * DISTANCE_PENALTY
+    const score = (place: google.maps.places.Place) =>
+      qualityScore(place) - distanceKm(center, place) * DISTANCE_PENALTY
 
     return pool.sort((a, b) => score(b) - score(a)).slice(0, MAX_RESULTS)
   }
 
-  const fetchPlaces = async (spot: Spot) => {
+  const fetchPlaces = async (spot: Spot, key: string) => {
     await load()
     const { Place, SearchNearbyRankPreference } = (await google.maps.importLibrary(
       'places',
@@ -105,23 +117,25 @@ export const usePlacesStore = defineStore('places', () => {
     }
 
     const close = await searchWithin(NEAR_RADIUS_M)
-    if (close.length >= 5) return close
-    return searchWithin(WIDE_RADIUS_M)
+    const ranked = close.length >= 5 ? close : await searchWithin(WIDE_RADIUS_M)
+    writePlaceCache(key, ranked)
+    return ranked.map((place) => hydratePlace(snapshotPlace(place)))
   }
 
   const search = async (spot: Spot) => {
     if (!location.coords) return
     const key = keyFor(spot)
 
-    const cached = cache.get(key)
+    const cached = cache.get(key) ?? readPlaceCache(key)
     if (cached) {
+      cache.set(key, cached)
       apply(cached)
       return
     }
 
     let job = inflight.get(key)
     if (!job) {
-      job = fetchPlaces(spot)
+      job = fetchPlaces(spot, key)
         .then((list) => {
           cache.set(key, list)
           return list
@@ -146,6 +160,19 @@ export const usePlacesStore = defineStore('places', () => {
     } finally {
       if (keyFor(spot) === key) isFetching.value = false
     }
+  }
+
+  const rememberDetails = (id: string, details: { name: string; hours: string }) => {
+    const patch = (list: ListedPlace[]) =>
+      list.map((place) =>
+        place.id === id
+          ? { ...place, displayName: details.name, hoursLabel: details.hours }
+          : place,
+      )
+
+    results.value = patch(results.value)
+    for (const [entryKey, list] of cache) cache.set(entryKey, patch(list))
+    patchPlaceCache(id, details)
   }
 
   const selectPlace = (index: number) => {
@@ -182,6 +209,7 @@ export const usePlacesStore = defineStore('places', () => {
     activeIndex,
     activePhotoIndex,
     search,
+    rememberDetails,
     selectPlace,
     next,
     prev,
