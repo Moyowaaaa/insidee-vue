@@ -1,0 +1,6 @@
+// Forward-only aggregator so other partials can @use 'abstracts' as *;
+@forward 'variables';
+@forward 'breakpoints';
+@forward 'functions';
+@forward 'mixins';
+@forward 'placeholders';

@@ -1,0 +1,53 @@
+@use 'sass:map';
+@use 'breakpoints' as bp;
+
+// Flex helpers ----------------------------------------------------------------
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// Media queries ---------------------------------------------------------------
+@mixin respond-above($name) {
+  $value: map.get(bp.$breakpoints, $name);
+
+  @if $value {
+    @media (min-width: $value) {
+      @content;
+    }
+  } @else {
+    @error "Unknown breakpoint `#{$name}`.";
+  }
+}
+
+@mixin respond-below($name) {
+  $value: map.get(bp.$breakpoints, $name);
+
+  @if $value {
+    @media (max-width: ($value - 1px)) {
+      @content;
+    }
+  } @else {
+    @error "Unknown breakpoint `#{$name}`.";
+  }
+}
+
+// Visually hidden -------------------------------------------------------------
+@mixin visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

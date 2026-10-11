@@ -1,0 +1,21 @@
+// =============================================================================
+// 7-1 entrypoint
+//
+//   abstracts/   -> tokens, functions, mixins (no CSS output)
+//   vendors/     -> 3rd-party resets / overrides
+//   base/        -> element defaults, typography
+//   layout/      -> structural pieces (grid, container, header, footer)
+//   components/  -> self-contained UI pieces
+//   pages/       -> page-specific styles
+//   themes/      -> theme variables
+//
+// Order matters: tokens -> resets -> base -> layout -> components -> pages -> themes.
+// =============================================================================
+
+@use 'abstracts';
+@use 'vendors';
+@use 'themes';
+@use 'base';
+@use 'layout';
+@use 'components';
+@use 'pages';

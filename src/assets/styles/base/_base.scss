@@ -1,0 +1,12 @@
+@use '../abstracts' as *;
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+}

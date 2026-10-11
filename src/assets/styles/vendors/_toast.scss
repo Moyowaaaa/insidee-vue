@@ -1,0 +1,48 @@
+@use '../abstracts' as *;
+
+[data-sonner-toaster][data-sonner-theme='light'] {
+  --normal-bg: #f0f0f0;
+  --normal-border: transparent;
+  --normal-text: #333333;
+  --border-radius: 12px;
+  font-family: $font-body;
+}
+
+[data-sonner-toaster][data-sonner-theme='light'] [data-sonner-toast][data-styled='true'] {
+  background: #f0f0f0;
+  border-color: transparent;
+  color: #333333;
+}
+
+[data-sonner-toast] {
+  transition:
+    transform 0.48s $ease-out,
+    opacity 0.48s $ease-out,
+    height 0.4s ease,
+    box-shadow 0.2s ease;
+}
+
+[data-sonner-toast][data-styled='true'] {
+  padding: 0.8rem 1rem;
+  gap: 0.7rem;
+  box-shadow: 0 14px 34px rgba(51, 51, 51, 0.1);
+}
+
+[data-sonner-toast][data-styled='true'] [data-title] {
+  font-family: $font-display;
+  font-weight: $fw-bold;
+  font-size: 1.45rem;
+  line-height: 1;
+  color: #333333;
+}
+
+[data-sonner-toast][data-styled='true'] [data-description] {
+  font-family: $font-body;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: #525252;
+}
+
+[data-sonner-toast][data-styled='true'] [data-icon] svg {
+  color: #333333;
+}

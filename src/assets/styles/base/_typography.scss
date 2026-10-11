@@ -1,0 +1,33 @@
+@use '../abstracts' as *;
+
+html {
+  font-size: 1rem;
+}
+
+body {
+  font-family: $font-body;
+  font-weight: $fw-regular;
+  color: $color-text;
+  background-color: $color-bg;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: $font-display;
+  font-weight: $fw-bold;
+  line-height: 1.2;
+}
+
+.amatic-sc-regular {
+  font-family: $font-display;
+  font-weight: $fw-regular;
+}
+
+.amatic-sc-bold {
+  font-family: $font-display;
+  font-weight: $fw-bold;
+}
