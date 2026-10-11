@@ -24,6 +24,11 @@
       </template>
     </div>
 
+    <button type="button" class="card-section__more" @click="finderOpen = true">
+      Looking for something else?
+    </button>
+    <TypeFinder v-model="finderOpen" @select="selectType" />
+
     <div class="card-section__first-dash">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 324 24" fill="none">
         <path
@@ -62,11 +67,13 @@ import { spotTypes } from '@/features/data.ts'
 import CategoryCard from './CategoryCard.vue'
 import type { spot } from '@/features/types.ts'
 import PlaceModal from './ui/PlaceModal.vue'
+import TypeFinder from './ui/TypeFinder.vue'
 import { ref } from 'vue'
 import useModalStore from '@/stores/modal.ts'
 
 const bus = '/images/bus.png'
 const selectedType = ref<spot | null>(null)
+const finderOpen = ref(false)
 const modal = useModalStore()
 const { openModal } = storeToRefs(modal)
 
@@ -84,8 +91,10 @@ const selectType = (type: spot) => {
 
   left: 0;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   position: relative;
+  gap: 4rem;
 
   &__container {
     width: 100%;
@@ -135,6 +144,20 @@ const selectType = (type: spot) => {
   &__link {
     display: none;
   }
+
+  &__more {
+    margin-top: 0.35rem;
+    border: 0;
+    padding: 0;
+    background: none;
+    color: #525252;
+    font-family: $font-body;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
 }
 
 @include respond-below('md') {
@@ -168,6 +191,10 @@ const selectType = (type: spot) => {
       width: 2.5rem;
       max-width: none;
     }
+  }
+
+  .card-section__more {
+    font-size: 0.75rem;
   }
 }
 </style>
