@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
 import { useLocationStore } from '@/stores/location'
-import LocationDialog from '@/components/ui/LocationDialog.vue'
+import { computed, ref } from 'vue'
+import LocationDialog from '../ui/LocationDialog.vue'
 
 const location = useLocationStore()
 const locationOpen = ref(false)
