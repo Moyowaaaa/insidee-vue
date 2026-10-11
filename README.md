@@ -1,6 +1,6 @@
 # Insidee
 
-This is a rewrite of [insideee](https://github.com/Moyowaaaa/insideee), the React app. Same idea, rebuilt in Vue: pick a category and see places worth visiting around you.
+This is an optimized rewrite of [insideee](https://github.com/Moyowaaaa/insideee), the React app. Same idea, rebuilt in Vue: pick a category and see places worth visiting around you.
 
 Insidee asks for your location, then looks up nearby spots in three categories — Outdoorzyy, Food & Drinks, and Others. Results stay inside a short radius and are ordered by rating, with closer places kept ahead of distant ones. Opening a category shows a place card with photos, hours, distance, and reviews. On a phone the cards stack, and the place view becomes a single scrolling sheet.
 
